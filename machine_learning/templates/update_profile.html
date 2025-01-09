@@ -1,0 +1,51 @@
+{% extends 'master.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Update Profile</title>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+
+    <div class="card shadow-lg p-4" style="width: 100%; max-width: 600px;">
+        <h2 class="text-center mb-4 font-weight-bold">Update Profile</h2>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group mb-3">
+                <label for="height" class="font-weight-semibold">Height (cm)</label>
+                <input type="text" class="form-control" id="height" name="Height" value="{{ new_height }}" required>
+            </div>
+            <div class="form-group mb-3">
+                <label for="weight" class="font-weight-semibold">Weight (kg)</label>
+                <input type="text" class="form-control" id="weight" name="Weight" value="{{ new_weight }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 mt-3">Update Profile</button>
+        </form>
+
+        {% if height_changed or weight_changed %}
+        <!-- Changes Summary Container -->
+        <div class="container mt-5">
+            <div class="card shadow-sm p-4">
+                <h3 class="font-weight-bold">Changes Summary</h3>
+                <ul>
+                    {% if height_changed %}
+                    <li>Height changed from <strong>{{ old_height }} cm</strong> to <strong>{{ new_height }} cm</strong></li>
+                    {% else %}
+                    <li>No changes to height. Current: <strong>{{ old_height }} cm</strong></li>
+                    {% endif %}
+
+                    {% if weight_changed %}
+                    <li>Weight changed from <strong>{{ old_weight }} kg</strong> to <strong>{{ new_weight }} kg</strong></li>
+                    {% else %}
+                    <li>No changes to weight. Current: <strong>{{ old_weight }} kg</strong></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

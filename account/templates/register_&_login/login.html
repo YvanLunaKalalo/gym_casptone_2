@@ -1,0 +1,149 @@
+{% extends 'master_login_&_register.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Login</title>
+{% endblock %}
+
+{% block content %}
+
+<style type="text/css">
+  .main-banner {
+    position: relative;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  #bg-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+
+  .video-overlay {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+  }
+
+  .form-container {
+    background: rgba(255, 255, 255, 0.8);
+    /* Semi-transparent white */
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+    /* Set maximum width */
+    width: 100%;
+    /* Full width */
+    margin: 0 auto;
+    /* Center horizontally */
+  }
+
+  .form-signin {
+    width: 100%;
+  }
+
+  .form-signin .form-control {
+    height: auto;
+    padding: 10px;
+    font-size: 16px;
+    margin-bottom: 15px;
+    /* Space between inputs */
+  }
+
+  .form-signin .form-check {
+    margin-bottom: 15px;
+  }
+
+  .h3 {
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: bold;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+  }
+
+  .btn-primary {
+    background-color: #ed563b;
+    border: none;
+  }
+
+  .btn-primary:hover {
+    background-color: #c94f2d;
+    /* Darker shade for hover */
+  }
+
+  .alert {
+    margin-top: 10px;
+  }
+</style>
+
+<div class="main-banner" id="top">
+  <video autoplay muted loop id="bg-video">
+    <source src="{% static 'images/2.mp4' %}" type="video/mp4" />
+  </video>
+
+  <div class="video-overlay header-text">
+    <div class="form-container">
+      <form class="form-signin" method="post">
+        {% csrf_token %}
+        <h1 class="h3">Login</h1>
+
+        <input type="email" name="email" id="inputEmail" class="form-control" placeholder="Email address"
+          autocomplete="off" required autofocus>
+
+        <input type="password" name="password" id="inputPassword" class="form-control" placeholder="Password"
+          autocomplete="off" required>
+
+        {% for field in login_form %}
+        {% for error in field.errors %}
+        <div class="alert alert-danger">{{ error }}</div>
+        {% endfor %}
+        {% endfor %}
+
+        {% if login_form.non_field_errors %}
+        <div class="alert alert-danger">
+          <p>{{ login_form.non_field_errors }}</p>
+        </div>
+        {% endif %}
+
+        {% if error_message %}
+        <div class="alert alert-danger">{{ error_message }}</div>
+        {% endif %}
+
+        {% if error_messages %}
+        <div class="alert alert-danger">{{ error_messages }}</div>
+        {% endif %}
+
+        <button class="btn btn-lg btn-primary" style="background-color: #ed563b; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px;" type="submit">Log in</button>
+
+        <div class="d-flex flex-column p-2">
+          <a class='m-auto' href="{% url 'password_reset' %}" style="text-align: center;">
+            Forgot password?
+          </a>
+        </div>
+      </form>
+
+      <a href="{% url 'index' %}" class="btn btn-primary mt-3" style="background-color: #ed563b; border: none; padding: 12px 20px; font-size: 16px; display: block; text-align: center;">
+        Go to Home
+      </a>            
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

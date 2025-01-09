@@ -1,0 +1,83 @@
+{% extends 'master.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Progress Tracker</title>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+
+    <div class="card shadow-lg p-4" style="width: 100%; max-width: 900px;">
+        <h2 class="text-center mb-4 font-weight-bold">Progress Tracker</h2>
+
+        <!-- Progress Overview -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5>Total Workouts: <span class="text-primary">{{ total_workouts }}</span></h5>
+                <p class="text-muted">Completed Workouts: <span class="text-success">{{ completed_count }}</span></p>
+            </div>
+            <div class="col-md-6">
+                <h5>Overall Progress</h5>
+                <div class="progress" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ progress_percentage }}%;" 
+                         aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        <strong>{{ progress_percentage }}%</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout History -->
+        <h4 class="mb-3 font-weight-bold">Workout History</h4>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Workout Title</th>
+                        <th>Status</th>
+                        <th>Completion Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for progress in user_progress %}
+                    <tr>
+                        <td>{{ progress.workout.Title }}</td>
+                        <td>
+                            {% if progress.completed %}
+                                <span class="badge bg-success">Completed</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">In Progress</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if progress.completed %}
+                                {{ progress.progress_date|date:"M d, Y" }}
+                            {% else %}
+                                --- 
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">No workouts tracked yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Next Step Section -->
+        <div class="alert alert-info mt-4 text-center">
+            {% if progress_percentage == 100 %}
+                <h5 class="font-weight-bold">Congratulations!</h5>
+                <p>You have completed all workouts. New workouts will be recommended soon. Keep up the great work!</p>
+            {% else %}
+                <h5 class="font-weight-bold">Next Steps</h5>
+                <p>You are making great progress! Continue your current workout plan to reach 100% completion.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends 'master.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Workout Session</title>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5 d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+
+    <div class="w-100" style="max-width: 800px;">
+        <!-- Progress Bar Section -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h4 class="card-title text-center">Your Progress</h4>
+                <div class="progress mb-3" style="height: 30px;">
+                    <div class="progress-bar bg-success" role="progressbar" 
+                        style="width: {{ progress_percentage }}%;" 
+                        aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
+                        {{ progress_percentage }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout Details Section -->
+        <div class="card shadow-lg">
+            <div class="card-body">
+                <h2 class="card-title text-center text-primary">{{ workout.Title }}</h2>
+                <hr>
+                <p class="card-text"><strong>Description:</strong> {{ workout.Desc }}</p>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Type:</strong> {{ workout.Type }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Body Part:</strong> {{ workout.BodyPart }}</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Equipment:</strong> {{ workout.Equipment }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Level:</strong> {{ workout.Level }}</p>
+                    </div>
+                </div>
+                <!-- Workout Completion Button -->
+                <form method="post" action="{% url 'complete_workout' %}">
+                    {% csrf_token %}
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle-fill"></i> Complete Workout
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

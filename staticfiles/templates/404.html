@@ -1,0 +1,33 @@
+{% extends 'master_login_&_register.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Page Not Found</title>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-banner" id="top">
+    <video autoplay muted loop id="bg-video">
+        <source src="{% static 'images/image2.png' %}" type="video/mp4" />
+    </video>
+
+    <div class="video-overlay header-text">
+        <div class="caption">
+            <div class="container bg-light p-5 rounded shadow">
+                <h1 class="text-center mb-4" style="font-size: 36px; font-weight: bold; color: #333;">Oops! Wrong Link</h1>
+                <p class="text-center mb-4" style="font-size: 18px; color: #555;">
+                    We couldn't find the page you were looking for.
+                </p>
+                <div class="text-center">
+                    <a href="{% url 'index' %}" class="btn btn-primary" style="background-color: #ed563b; border: none; padding: 12px 25px; font-size: 16px; border-radius: 5px; text-decoration: none;">
+                        Go to Homepage
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

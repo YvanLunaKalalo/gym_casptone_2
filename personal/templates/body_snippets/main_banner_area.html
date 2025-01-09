@@ -1,0 +1,99 @@
+{% load static %}
+
+<style>
+    .main-button button {
+  display: inline-block;
+  font-size: 15px;
+  padding: 12px 20px;
+  background-color: #ed563b;
+  color: #fff;
+  text-align: center;
+  font-weight: 400;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+    .main-button button:hover {
+  background-color: #f9735b;
+}
+
+</style>
+
+<!-- ***** Main Banner Area Start ***** -->
+<div class="main-banner" id="top">
+    <video autoplay muted loop id="bg-video" class="w-100">
+        <source src="{% static 'images/2.mp4' %}" type="video/mp4" />
+    </video>
+
+    <div class="video-overlay header-text d-flex flex-column justify-content-center align-items-center">
+        
+        {% if request.user.is_authenticated %}
+        <div class="caption text-center text-white p-4">
+            <h6 class="mb-3">Welcome back, <strong>{{ request.user.username }}</strong>!</h6>
+            <h2 class="mb-4">Unlock Your <em>Personalized Workout Plan</em></h2>
+
+            {% if progress_workout %}
+            <!-- If there's an ongoing workout session -->
+            <div class="mt-3">
+                <label for="continueWorkoutButton" class="form-label text-white">You have an unfinished workout!</label>
+                <div class="main-button mt-1">
+                    <a id="continueWorkoutButton" href="{% url 'workout_session' %}" class="main-button">Continue Your Workout</a>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if show_recommendation_button %}
+                <div class="main-button">
+                    <button type="button" class="btn btn-primary">
+                        Get New Recommendation
+                    </button>
+                </div>
+            {% endif %}
+
+            <!-- Show the button for next workout recommendation after completing all workouts for day 1 -->
+            {% if next_workout_available %}
+            <div class="mt-3">
+                <label for="nextWorkoutButton" class="form-label text-white">Ready for your next workout?</label>
+                <div class="main-button mt-1">
+                    <a id="nextWorkoutButton" href="{% url 'workout_recommendations' %}" class="main-button">Get New Workout Recommendations</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Only show recommendation link if no profile data -->
+            {% if not has_profile %}
+            <div class="mt-3">
+                <label for="fillFormButton" class="form-label text-white">Looking for a new routine?</label>
+                <div class="main-button">
+                    <a id="fillFormButton" href="{% url 'recommend' %}" class="main-button">Get Your Recommendations</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Label for the dashboard button -->
+            <div class="mt-3">
+                <label for="goToDashboardButton" class="form-label text-white">Already have a plan?</label>
+                <div class="main-button mt-1">
+                    <a id="goToDashboardButton" href="{% url 'dashboard' %}" class="main-button">Go to Your Dashboard</a>
+                </div>
+            </div>
+
+        </div>
+
+        {% else %}
+        
+        <div class="caption text-center text-white p-4">
+            <h6 class="mb-2">Work harder, get stronger</h6>
+            <h2 class="mb-4">Achieve your goals with <em>our gym</em></h2>
+            <div class="main-button">
+                <a href="{% url 'register' %}" class="main-button">Join Us Today</a>
+            </div>
+        </div>
+
+        {% endif %}
+
+    </div>
+</div>
+<!-- ***** Main Banner Area End ***** -->

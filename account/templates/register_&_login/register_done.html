@@ -1,0 +1,32 @@
+{% extends 'master_login_&_register.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Registration Confirmation</title>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-banner" id="top">
+    <video autoplay muted loop id="bg-video">
+        <source src="{% static 'images/2.mp4' %}" type="video/mp4" />
+    </video>
+
+    <div class="video-overlay header-text">
+        <div class="caption">
+            <div class="container bg-light p-5 rounded shadow">
+                <h1 class="text-center mb-4" style="font-size: 36px; font-weight: bold; color: #333;">REGISTRATION SUCCESSFUL!</h1>
+                <p class="text-center mb-4" style="font-size: 18px; color: #555;">
+                    Thank you for registering! We’ve sent a confirmation email to your inbox.<br>
+                    Please check it to complete your registration.
+                </p>
+                <div class="text-center">
+                    <a href="{% url 'index' %}" class="btn btn-primary" style="background-color: #ed563b; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px;">Return to Home</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

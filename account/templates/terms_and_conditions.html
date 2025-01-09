@@ -1,0 +1,70 @@
+{% extends 'master_login_&_register.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Workout Recommendations</title>
+{% endblock %}
+
+{% block content %}
+
+    <!-- Responsive container for centering the content -->
+    <div class="container d-flex justify-content-center align-items-center my-5" style="min-height: 100vh;">
+        <!-- Responsive Terms Container -->
+        <div class="terms-container bg-white p-4 p-md-5 rounded shadow" style="max-width: 1200px; width: 100%;">
+            <h5 class="text-center mb-4" style="font-size: 28px; font-weight: bold; color: #333;">Terms and Conditions of Use</h5>
+            <hr>
+
+            <p>
+                <strong>1. General Agreement</strong><br>
+                By using the facilities and services provided by Flex Appeal, you agree to comply with and be bound by the
+                following Terms and Conditions. Please read them carefully.
+            </p>
+
+            <p>
+                <strong>2. Acknowledgment of Risk</strong><br>
+                You acknowledge that participation in physical exercise and the use of gym facilities involves inherent risks,
+                including but not limited to, the risk of injury. You assume all such risks, both known and unknown, and agree
+                that Flex Appeal is not responsible for any injuries, accidents, or damages that may occur.
+            </p>
+
+            <p>
+                <strong>3. No Coverage for Injuries</strong><br>
+                Flex Appeal does not cover any injuries, accidents, or health issues that may occur while using the gym
+                facilities or engaging in any activities provided by Flex Appeal. This includes, but is not limited to,
+                injuries sustained during exercise, training, classes, or while using gym equipment. You are solely
+                responsible for your safety and well-being.
+            </p>
+
+            <p>
+                <strong>4. Personal Responsibility</strong><br>
+                You agree to use the facilities and equipment in accordance with the instructions provided by Flex Appeal and
+                to follow all posted safety guidelines. You are responsible for ensuring that you are in adequate physical
+                condition to participate in any activities or use any equipment. If you have any health concerns or
+                conditions, it is your responsibility to consult with a medical professional before engaging in any activities
+                at Flex Appeal.
+            </p>
+
+            <p>
+                <strong>5. Changes to Terms</strong><br>
+                Flex Appeal reserves the right to modify these Terms and Conditions at any time. Continued use of the
+                facilities constitutes acceptance of any changes.
+            </p>
+
+            <p>
+                <strong>6. Contact Information</strong><br>
+                If you have any questions about these Terms and Conditions, please contact Flex Appeal at [contact
+                information].
+            </p>
+
+            <hr>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'register' %}" class="btn btn-primary" style="background-color: #ed563b; border: none; padding: 10px 20px; font-size: 16px;">
+                    Go Back To Register
+                </a>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

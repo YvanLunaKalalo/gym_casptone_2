@@ -1,0 +1,213 @@
+{% extends 'master.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Profile Form</title>
+{% endblock %}
+
+{% block content %}
+
+<style type="text/css">
+    /* Video background and overlay */
+    .main-banner {
+        position: relative;
+    }
+
+    #bg-video {
+        min-width: 100%;
+        min-height: 100vh;
+        max-width: 100%;
+        max-height: 100vh;
+        object-fit: cover;
+        z-index: -1;
+        position: absolute;
+    }
+
+    #bg-video::-webkit-media-controls {
+        display: none !important;
+    }
+
+    .video-overlay {
+        position: absolute;
+        background-color: rgba(35, 45, 57, 0.8);
+        top: 0;
+        left: 0;
+        bottom: 7px;
+        width: 100%;
+    }
+
+    .main-banner .caption {
+        text-align: center;
+        position: absolute;
+        width: 80%;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+    }
+
+    .main-banner .caption h6 {
+        margin-top: 0px;
+        font-size: 18px;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: 0.5px;
+    }
+
+    .main-banner .caption h4 {
+        margin-top: 30px;
+        margin-bottom: 25px;
+        font-size: 84px;
+        text-transform: uppercase;
+        font-weight: 800;
+        color: #fff;
+        letter-spacing: 1px;
+    }
+
+    .main-banner .caption h3 em {
+        font-style: normal;
+        color: #ed563b;
+        font-weight: 900;
+    }
+
+    /* Form container styling */
+    .form-container {
+        max-width: 650px;
+        margin: 0 auto;
+        padding: 40px;
+        background-color: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 25px rgba(0, 0, 0, 0.1);
+        position: relative;
+        z-index: 2;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .form-control, .form-select {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ced4da;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #ed563b;
+        box-shadow: none;
+    }
+
+    /* Styling the submit button */
+    .btn-custom {
+        background-color: #ed563b;
+        border: none;
+        padding: 15px;
+        font-weight: bold;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: background-color 0.3s ease;
+        width: 100%;
+        border-radius: 8px;
+    }
+
+    .btn-custom:hover {
+        background-color: #f76c53;
+    }
+
+    /* Headings */
+    h2 {
+        font-weight: bold;
+        letter-spacing: 1px;
+        color: #333;
+    }
+
+    .form-container .mb-3 {
+        margin-bottom: 1.5rem;
+    }
+</style>
+
+<div class="main-banner" id="top">
+    <div class="container mt-5">
+        <form method="POST" class="form-container">
+            {% csrf_token %}
+
+            <h2 class="text-center mb-4">Complete Your Profile</h2>
+
+            <!-- Sex -->
+            <div class="mb-3">
+                <label for="Sex" class="form-label">Sex</label>
+                <select name="Sex" class="form-select" required>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                </select>
+            </div>
+
+            <!-- Age -->
+            <div class="mb-3">
+                <label for="Age" class="form-label">Age</label>
+                <input type="number" name="Age" class="form-control" required>
+            </div>
+
+            <!-- Height -->
+            <div class="mb-3">
+                <label for="Height" class="form-label">Height (in cm)</label>
+                <input type="number" step="0.01" name="Height" class="form-control" required>
+            </div>
+
+            <!-- Weight -->
+            <div class="mb-3">
+                <label for="Weight" class="form-label">Weight (in kg)</label>
+                <input type="number" step="0.1" name="Weight" class="form-control" required>
+            </div>
+
+            <!-- Hypertension -->
+            <!-- <div class="mb-3">
+                <label for="Hypertension" class="form-label">Do you have Hypertension?</label>
+                <select name="Hypertension" class="form-select" required>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                </select>
+            </div> -->
+
+            <!-- Diabetes -->
+            <!-- <div class="mb-3">
+                <label for="Diabetes" class="form-label">Do you have Diabetes?</label>
+                <select name="Diabetes" class="form-select" required>
+                    <option value="No">No</option>
+                    <option value="Yes">Yes</option>
+                </select>
+            </div> -->
+
+            <!-- Fitness Goal -->
+            <div class="mb-3">
+                <label for="Fitness Goal" class="form-label">Fitness Goal</label>
+                <select name="Fitness Goal" class="form-select" required>
+                    <option value="Weight Gain">Weight Gain</option>
+                    <option value="Weight Loss">Weight Loss</option>
+                </select>
+            </div>
+
+            <!-- Fitness Type -->
+            <div class="mb-3">
+                <label for="Fitness Type" class="form-label">Fitness Type</label>
+                <select name="Fitness Type" class="form-select" required>
+                    <option value="Muscular Fitness">Muscular Fitness</option>
+                    <option value="Cardio Fitness">Cardio Fitness</option>
+                </select>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="mt-4">
+                <button type="submit" class="btn btn-custom text-light">
+                    Get Recommendations
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

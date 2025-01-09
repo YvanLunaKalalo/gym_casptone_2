@@ -1,0 +1,151 @@
+{% extends 'master.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Dashboard</title>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <h2 class="text-center mb-4">User Dashboard</h2>
+
+    <!-- Column layout for User Profile, Workouts, and Progress -->
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <h5 class="text-center mb-4">Profile Information</h5>
+
+            <!-- User Profile Section -->
+            {% if user_profile %}
+            <div class="card shadow-sm mb-4 border-0">
+                <div class="card-header text-black">
+                    <h5 class="mb-0">User Profile</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><strong>Name:</strong> {{ request.user.username }}</li>
+                        <li><strong>Age:</strong> {{ user_profile.Age }}</li>
+                        <li><strong>Gender:</strong> {{ user_profile.Sex }}</li>
+                        <li><strong>Height:</strong> {{ user_profile.Height }} cm</li>
+                        <li><strong>Weight:</strong> {{ user_profile.Weight }} kg</li>
+                        <li><strong>BMI:</strong> {{ user_profile.BMI }}</li>
+                        <li><strong>Fitness Goal:</strong> {{ user_profile.Fitness_Goal }}</li>
+                        <li><strong>Fitness Type:</strong> {{ user_profile.Fitness_Type }}</li>
+                    </ul>
+                </div>
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center mt-3">
+                <strong>You need to complete your profile!</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-12 mb-4">
+            <!-- Available Workouts Section grouped by days -->
+            <h5 class="text-center mb-4">Your Workouts by Days</h5>
+            {% if days_progress %}
+            <div class="accordion" id="dayAccordion">
+                {% for day in days_progress %}
+                <div class="accordion-item mb-3 border-0">
+                    <h2 class="accordion-header" id="headingDay{{ forloop.counter }}">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                                data-bs-target="#collapseDay{{ forloop.counter }}" aria-expanded="false"
+                                aria-controls="collapseDay{{ forloop.counter }}">
+                            Day {{ forloop.counter }} - Progress: {{ day.progress_percentage }}%
+                        </button>
+                    </h2>
+                    <div id="collapseDay{{ forloop.counter }}" class="accordion-collapse collapse"
+                         aria-labelledby="headingDay{{ forloop.counter }}" data-bs-parent="#dayAccordion">
+                        <div class="accordion-body">
+                            <ul class="list-unstyled">
+                                {% for workout in day.day_workouts %}
+                                <li class="mb-2">
+                                    <strong>{{ workout.Title }}</strong>
+                                    <p>{{ workout.Desc }}</p>
+                                    <p><strong>Type:</strong> {{ workout.Type }}</p>
+                                    <p><strong>Body Part:</strong> {{ workout.BodyPart }}</p>
+                                    <p><strong>Equipment:</strong> {{ workout.Equipment }}</p>
+                                    <p><strong>Level:</strong> {{ workout.Level }}</p>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info text-center mt-3">
+                <strong>No workouts recorded yet!</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-12 mb-4">
+            <!-- Your Progress Section with Chart.js Graph -->
+            <h5 class="text-center mb-4">Your Progress</h5>
+            {% if user_progress %}
+            <div class="card shadow-sm border-0">
+                <div class="card-body">
+                    <canvas id="progressChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Chart.js script -->
+            <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+            <script>
+                const ctx = document.getElementById('progressChart').getContext('2d');
+                const progressChart = new Chart(ctx, {
+                    type: 'bar', // Type of chart (can also be 'line', 'pie', etc.)
+                    data: {
+                        labels: [
+                            {% for day in days_progress %}
+                            "Day {{ forloop.counter }}",
+                            {% endfor %}
+                        ],
+                        datasets: [{
+                            label: 'Progress (%)',
+                            data: [
+                                {% for day in days_progress %}
+                                {{ day.progress_percentage }},
+                                {% endfor %}
+                            ],
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)', // Bar color
+                            borderColor: 'rgba(75, 192, 192, 1)', // Border color
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100 // Set max value to 100 for percentages
+                            }
+                        },
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'top',
+                            },
+                        },
+                    }
+                });
+            </script>
+            {% else %}
+            <div class="alert alert-info text-center mt-3">
+                <strong>No progress recorded yet!</strong>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Back to Home Button -->
+        <div class="mt-4 text-center">
+            <a href="{% url 'index' %}" class="btn btn-primary w-100" style="background-color: #ed563b; border: none;">
+                Back to Home
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

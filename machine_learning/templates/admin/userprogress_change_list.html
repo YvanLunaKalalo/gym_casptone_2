@@ -1,0 +1,70 @@
+{% extends 'admin/change_list.html' %}
+
+{% block extrahead %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Style the chart container */
+        .chart-container {
+            width: 100%;
+            max-width: 900px;  /* You can adjust the max-width based on your preference */
+            margin: 30px auto;  /* Centers the container horizontally and adds vertical spacing */
+            padding: 20px;
+            background-color: #f9f9f9;  /* Light background color */
+            border-radius: 10px;  /* Rounded corners for a modern look */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);  /* Optional subtle shadow effect */
+        }
+
+        /* Ensure the canvas takes full width of its container */
+        canvas {
+            width: 100% !important;
+            height: auto !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="chart-container">
+        <canvas id="userProgressChart"></canvas>
+    </div>
+
+    {{ block.super }}
+
+    <script>
+        var workoutTitles = {{ workout_titles|safe }};
+        var progressCounts = {{ progress_counts|safe }};
+        
+        var ctx = document.getElementById('userProgressChart').getContext('2d');
+        var userProgressChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: workoutTitles,
+                datasets: [{
+                    label: 'User Progress Distribution',
+                    data: progressCounts,
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.6)',
+                        'rgba(255, 99, 132, 0.6)',
+                        'rgba(255, 206, 86, 0.6)',
+                    ],
+                    borderColor: [
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(255, 206, 86, 1)',
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        enabled: true,
+                    }
+                }
+            }
+        });
+    </script>
+{% endblock %}

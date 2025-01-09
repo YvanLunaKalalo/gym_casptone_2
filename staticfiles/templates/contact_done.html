@@ -1,0 +1,33 @@
+{% extends 'master.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Thank you</title>
+{% endblock %}
+
+{% block content %}
+
+<div class="main-banner" id="top">
+    <video autoplay muted loop id="bg-video">
+        <source src="{% static 'images/image2.png' %}" type="video/mp4" />
+    </video>
+
+    <div class="video-overlay header-text">
+        <div class="caption">
+            <div class="container">
+                <div class="d-flex flex-column">
+                    <p class="m-auto p-2">
+                        Your message has been received, and our team will respond as soon as possible.
+                    </p>
+                    <p class="m-auto p-2">
+                        - Flex Appeal || Yvan L. Kalalo, Lyka Mae Lalog, and Edward Oraa Jr.
+                    </p>
+                    <p class="m-auto p-2"><a href="{% url 'index' %}">Return to Home</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
