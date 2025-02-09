@@ -39,10 +39,10 @@
 
 <!-- Main content area -->
 <div class="main-banner pt-5" id="top">
-  <div class="container pt-5"> <!-- Added padding for top spacing -->
+  <div class="container pt-5">
 
     <!-- Go Back Button -->
-    <a href="{% url 'index' %}" class="btn btn-custom mb-4">
+    <!-- <a href="{% url 'index' %}" class="btn btn-custom mb-4">
       Go Back
     </a>
 
@@ -65,6 +65,7 @@
                       <p class="mb-1"><strong>Body Part:</strong> {{ workout.BodyPart }}</p>
                       <p class="mb-1"><strong>Equipment:</strong> {{ workout.Equipment }}</p>
                       <p class="mb-1"><strong>Level:</strong> {{ workout.Level }}</p>
+                      <p class="mb-1"><strong>Repetitions:</strong> {{ repetitions }}</p>
                     </div>
                   </div>
                 </div>
@@ -75,10 +76,10 @@
           {% endif %}
         </div>
       </div>
-    </div>
+    </div> -->
 
     <!-- Start Workout Session Button -->
-    <div class="text-center mt-5">
+    <!-- <div class="text-center mt-5">
       <form method="POST" action="{% url 'workout_session' %}">
         {% csrf_token %}
         <button type="submit" class="btn btn-custom btn-lg w-100 text-uppercase font-weight-bold" style="letter-spacing: 1px;">
@@ -87,6 +88,45 @@
       </form>
     </div>
 
+  </div>
+</div> -->
+
+<div class="container py-5">
+  <h1 class="text-center mb-5 font-weight-bold text-uppercase text-dark" style="letter-spacing: 1px;">Weekly Workout Plan</h1>
+
+  {% for day, workouts in workout_plan.items %}
+    <div class="mb-5">
+      <h2 class="text-center mb-4 font-weight-bold text-dark" style="letter-spacing: 1px;">Daily Routine {{ day }}</h2>
+      <div class="row">
+        {% for workout in workouts %}
+          <div class="col-sm-12 col-md-6 col-lg-4 mb-4">
+            <!-- Workout Card -->
+            <div class="card shadow-lg border-0 h-100 text-dark">
+              <div class="card-body">
+                <h5 class="card-title font-weight-bold text-dark">{{ workout.Title }}</h5>
+                <p class="card-text text-muted">{{ workout.Desc }}</p>
+
+                <ul class="list-unstyled">
+                  <li><strong>Type:</strong> {{ workout.Type }}</li>
+                  <li><strong>Body Part:</strong> {{ workout.BodyPart }}</li>
+                  <li><strong>Equipment:</strong> {{ workout.Equipment }}</li>
+                  <!-- <li><strong>Level:</strong> {{ workout.Level }}</li> -->
+                  <!-- <li><strong>Repetitions: </strong> {{ repetitions }}</li> -->
+                </ul>
+
+                <!-- Optionally, you could add a "Start" button for each workout -->
+                <!-- <div class="d-flex justify-content-end">
+                  <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Start Workout</a>
+                </div> -->
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+  <div class="d-flex justify-content-center">
+    <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Start Workout</a>
   </div>
 </div>
 

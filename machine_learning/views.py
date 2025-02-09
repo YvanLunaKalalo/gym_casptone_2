@@ -5,9 +5,12 @@ from joblib import load
 import pandas as pd
 from django.conf import settings
 from sklearn.metrics.pairwise import cosine_similarity
-from .models import Workout, UserProfile, UserProgress
+from .models import Workout, UserProfile, UserProgress, WorkoutSession
 from django.utils.timezone import now
 from datetime import timedelta
+from django.utils import timezone
+from django.contrib import messages
+import random
 
 # Load the pre-trained model
 vectorizer = load('./Saved_Models/vectorizer.pkl') # Recommended Workout 2
@@ -22,6 +25,17 @@ workout_data['combined_features'] = workout_data['combined_features'].fillna('')
 # Transform workout features using the vectorizer
 workout_features_matrix = vectorizer.transform(workout_data['combined_features'])
 
+def get_repetitions(Fitness_goal):
+    """
+    Determines the repetitions based on the user's fitness goal.
+    """
+    if Fitness_goal == 'Weight Gain':
+        return 12  # Lower reps for muscle gain (focus on heavier weights)
+    elif Fitness_goal == 'Weight Loss':
+        return 15  # Higher reps for weight loss (moderate weights)
+    else:
+        return 0  # Default reps if no goal is provided
+
 # Define the view for workout recommendations
 def workout_recommendation_view(request):
     template = loader.get_template("profile_form.html")  # Your form template
@@ -29,7 +43,7 @@ def workout_recommendation_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    context = {}
+    context = {}        
 
     if request.method == 'POST':
         # Get profile data from form submission
@@ -63,6 +77,9 @@ def workout_recommendation_view(request):
                 'Level': Level, 'Fitness_Goal': Fitness_Goal, 'Fitness_Type': Fitness_Type
             }
         )
+        
+        # Get current session number (e.g., based on the current date or week number)
+        current_week_number = timezone.now().isocalendar()[1]  # Week number of the year
 
         columns = ['Age', 'Height', 'Weight', 'BMI', 'Sex_Female', 'Sex_Male', 'Hypertension_No', 'Hypertension_Yes', 'Diabetes_No', 'Diabetes_Yes', 'Level_Normal', 'Level_Obuse', 'Level_Overweight', 'Level_Underweight', 'Fitness Goal_Weight Gain', 'Fitness Goal_Weight Loss', 'Fitness Type_Cardio Fitness', 'Fitness Type_Muscular Fitness']
         data = {
@@ -85,17 +102,26 @@ def workout_recommendation_view(request):
             'Fitness Type_Cardio Fitness' : [1 if Fitness_Type == 'Cardio Fitness' else 0],
             'Fitness Type_Muscular Fitness' : [1 if Fitness_Type == 'Muscular Fitness' else 0],
         }
+        
+        # Calculate repetitions based on fitness goal
+        repetitions = get_repetitions(Fitness_Goal)
 
         # In this case, we'll just use the `Level`, `Fitness_Goal`, and `Fitness_Type` (categorical data) as a proxy
         profile_vector = vectorizer.transform([f"{Sex} {Age} {Height} {Weight} {Hypertension} {Diabetes} {BMI} {Level} {Fitness_Goal} {Fitness_Type}"])
 
         # Compute cosine similarity between profile and workout data
         similarity_scores = cosine_similarity(profile_vector, workout_features_matrix)
+        print(similarity_scores)
 
         # Get top 5 recommended workouts
-        top_indices = similarity_scores[0].argsort()[-5:][::-1]
+        top_indices = similarity_scores[0].argsort()[-15:][::-1]
         recommended_workouts = workout_data.iloc[top_indices]
-
+        
+        # Create a workout plan (7 days with 5 workouts per day)
+        workout_plan = {}
+        for day in range(1, 4):  # 7 days of the week
+            workout_plan[day] = recommended_workouts.iloc[(day-1)*5: day*5][['Title', 'Desc', 'Type', 'BodyPart', 'Equipment', 'Level']].to_dict(orient='records')
+            
         # Save recommended workouts to the UserProgress model
         for _, workout in recommended_workouts.iterrows():
             workout_instance, created = Workout.objects.get_or_create(
@@ -105,7 +131,7 @@ def workout_recommendation_view(request):
                     'Type': workout['Type'],
                     'BodyPart': workout['BodyPart'],
                     'Equipment': workout.get('Equipment', 'None'),
-                    'Level': workout.get('Level', 'None')
+                    'Level': workout.get('Level', 'None'),
                 }
             )
 
@@ -113,211 +139,443 @@ def workout_recommendation_view(request):
             UserProgress.objects.get_or_create(
                 user=request.user,
                 workout=workout_instance,
+                session_number=current_week_number,  # Use the session number or week number
                 defaults={'progress': 0}  # Initialize progress to 0
             )
             
-
         # Pass recommended workouts to the template
         context = {
             "recommended_workouts" : recommended_workouts[['Title', 'Desc', 'Type', 'BodyPart', 'Equipment', 'Level']].to_dict(orient='records'),
+            "repetitions": repetitions,  # Pass repetitions to the template if needed
+            "workout_plan" : workout_plan,
         }
         
         return render(request, 'workout_recommendations.html', context)  # Render the output template
 
     return HttpResponse(template.render(context, request))
 
+# Define the view for workout sessions
 def workout_session_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    # Fetch the user's current workout session from the UserProgress model
-    progress_workout = UserProgress.objects.filter(user=request.user, completed=False).first()
-
-    if not progress_workout:
-        # If no uncompleted workouts, redirect to a completion or fallback page
-        return redirect('workout_complete')
-
-    current_workout = progress_workout.workout  # Get the workout associated with the progress
+    # Get the user's workout progress
+    workout_progress = UserProgress.objects.filter(user=request.user)
+    user_profile = get_object_or_404(UserProfile, user=request.user) # Get the user's profile to access fitness goal and determine repetitions
+    repetitions_per_workout = get_repetitions(user_profile.Fitness_Goal)
+    preferred_reps = UserProgress.preferred_reps
+        
+    current_workout_index = request.session.get('current_workout_index', 0) # Get the current workout index from the session or start at 0
+    workouts_per_session = 5
+    total_workouts = workout_progress.count() # Organize the workout plan per day
     
-    # Calculate progress
-    total_workouts = UserProgress.objects.filter(user=request.user).count()
-    completed_count = UserProgress.objects.filter(user=request.user, completed=True).count()
-    progress_percentage = (completed_count / total_workouts) * 100 if total_workouts > 0 else 0
+    session_number = request.session.get('session_number', 1)
+
+    if current_workout_index >= total_workouts:
+        # All workouts are completed, save the session progress
+        workout_session = UserProgress.objects.create(
+            user=request.user,
+            session_number=request.session.get('session_number', 1),
+            completion_percentage=request.session.get('completion_percentage', 100)
+        )
+        workout_session.save()
+        
+        # Increment the session number for the next session
+        session_number += 1
+        request.session['session_number'] = session_number
+        
+        # Reset the session for a new routine
+        request.session['current_workout_index'] = 0
+        request.session['new_session'] = True
+
+        # After saving, redirect to a page indicating the routine is restarting
+        return render(request, 'generate_random_workouts') # All workouts are completed
+
+    # Get the current set of workouts (5 workouts at a time)
+    end_index = min(current_workout_index + workouts_per_session, total_workouts)
+    current_workouts = workout_progress[current_workout_index:end_index]
+        
+    # Initialize total repetitions completed for the current session (LAST CODE)
+    if 'new_session' not in request.session or request.session['new_session']:
+        request.session['total_repetitions_completed'] = 0  # Reset total reps for the new day/session
+        request.session['new_session'] = False  # Mark session as started
     
+    total_repetitions_completed = request.session.get('total_repetitions_completed', 0)  # Retrieve from session
+
+    reps_exceed_limit = False  # Flag for reps exceeding limit
+    total_repetitions_expected = repetitions_per_workout * workouts_per_session # Calculate the total repetitions expected for the day
+    session_number = request.session.get('session_number', 1) # Get or set the session number in the request session # Default to 1 if not set
+        
+    if request.method == 'POST':
+        print("Form data submitted:", request.POST)  # Debugging form data
+        
+        reps_exceed_limit = False # Flag to track if any reps exceed the limit
+        reps_incomplete = False  # Flag to check if reps are incomplete
+        
+        # Update workout progress for each workout in the current set
+        for workout in current_workouts:
+            reps_completed = request.POST.get(f'workout_{workout.id}_reps', 0)
+            
+            preferred_reps = request.POST.get(f'workout_{workout.id}_preferred_reps', 0)
+            
+            # Convert reps_completed to an integer
+            reps_completed = int(reps_completed) if reps_completed else 0  # Handle empty field case
+            
+            preferred_reps = int(preferred_reps) if preferred_reps else 0  # Handle empty field case
+
+            print(f"Reps completed for workout {workout.id}: {reps_completed}")
+            print(f"Preferred reps for workout {workout.id}: {preferred_reps}")
+            
+            total_repetitions_completed += reps_completed # Add to the total completed repetitions
+            
+            # Check if reps completed exceeds the expected repetitions for the workout
+            if reps_completed > preferred_reps:
+                reps_exceed_limit = True
+                messages.error(request, f"Some Reps exceeded the limit of {preferred_reps} reps.")
+                break  # Stop the loop and do not update any workouts        
+            
+            # Check if the reps completed are less than the required reps
+            if reps_completed <= preferred_reps:
+                #reps_incomplete = True
+            
+                workout.progress = reps_completed  # Update the reps (progress)
+                workout.preferred_reps = preferred_reps  # Update the preferred reps
+                workout.save()
+            
+            # If any reps are incomplete, prevent proceeding to the next workout plan
+            # if reps_incomplete:
+            #     completion_percentage = (total_repetitions_completed / total_repetitions_expected) * 100
+            #     request.session['completion_percentage'] = round(completion_percentage, 2)
+                
+                # Move to the next day for the next submission
+            # request.session['current_day'] = session_number + 1
+
+            # If all days are completed, mark the workout as done
+            # if session_number >= 3
+            #     request.session['current_workout_index'] = end_index
+            #     request.session['session_number'] = 1  # Reset to day 1 for the next session
+            
+            # total_repetitions_completed += reps_completed # Add to the total completed repetitions
+            
+            # Move to the next day for the next submission
+            # request.session['session_number'] = session_number + 1
+
+        if reps_exceed_limit:
+            return redirect('workout_session')  # Redirect back to the workout session without updating the session variables
+        
+        # If all workouts are not completed, stay on the same plan
+        # if not all_workouts_completed:
+        #     return redirect('workout_session')  # Redirect back to the workout session without updating the session variables
+            
+        # After loop, print the total repetitions completed so far
+        print(f"Total reps completed after POST: {total_repetitions_completed}")
+                
+        # Save the updated total reps in the session
+        # request.session['total_repetitions_completed'] = total_repetitions_completed
+        
+        # If any workout is incomplete, do not move to the next plan
+        # if has_incomplete_workouts:
+            # messages.info(request, "You have unfinished workouts. Complete all repetitions to proceed.")
+            # return redirect('done_workout')  # Redirect to the same session
+            
+        # If any reps are incomplete, prevent proceeding to the next workout plan
+        if reps_incomplete:
+            completion_percentage = (total_repetitions_completed / total_repetitions_expected) * 100
+            request.session['completion_percentage'] = round    (completion_percentage, 2)
+            
+            # messages.error(request, "You need to complete all repetitions before moving to the next workout plan.")
+            return redirect('workout_progress')
+        
+        # Calculate and save completion percentage
+        if total_repetitions_expected > 0:
+            completion_percentage = (total_repetitions_completed / total_repetitions_expected) * 100
+            request.session['completion_percentage'] = round(completion_percentage, 2)
+        else:
+            completion_percentage = 0
+
+        # Save the workout progress into the database (WorkoutHistory)
+        # workout_session = WorkoutSession.objects.create(
+        #     user=request.user,
+        #     session_number=session_number,
+        #     completion_percentage=completion_percentage
+        # )
+            
+        print(f"Completion percentage: {completion_percentage}%")
+            
+        # print(f"Total reps completed: {total_repetitions_completed}")
+        # print(f"Total reps expected: {total_repetitions_expected}")
+        # print(f"Completion percentage: {completion_percentage}%")
+            
+        # Reset session variables for the next workout session
+        request.session['total_repetitions_completed'] = 0  # Reset total reps for the next session
+        request.session['current_workout_index'] = end_index  # Move to the next set of workouts
+        
+        # Increment the session number for the next set of workouts
+        session_number += 1
+        request.session['session_number'] = session_number
+        request.session['new_session'] = True  # Mark session as new for the next day (LAST CODE)
+                
+        # Reset session variables for the next workout session
+        if end_index >= total_workouts:
+            request.session['has_unfinished_workout'] = False
+        else:
+            request.session['has_unfinished_workout'] = True
+                                    
+        # Redirect to done_workout.html to show progress
+        return redirect('workout_progress')
+    
+     # Set 'has_unfinished_workout' to True if there are still workouts to complete
+    request.session['has_unfinished_workout'] = current_workout_index < total_workouts
+    
+    # Calculate the percentage of repetitions completed
+    if total_repetitions_expected > 0:
+        completion_percentage = (total_repetitions_completed / total_repetitions_expected) * 100
+        request.session['completion_percentage'] = round(completion_percentage, 2)
+        
+    else:
+        completion_percentage = 0
+        
+    print(f"Total repetitions completed: {total_repetitions_completed}")
+    print(f"Total repetitions expected: {total_repetitions_expected}")
+    print(f"Completion percentage: {completion_percentage}%")
+
     context = {
-        'workout': {
-            'Title': current_workout.Title,
-            'Desc': current_workout.Desc,
-            'Type': current_workout.Type,
-            'BodyPart': current_workout.BodyPart,
-            'Equipment': current_workout.Equipment,
-            'Level': current_workout.Level,
-        },
-        'progress_workout': progress_workout,  # Include current progress for display
-        'progress_percentage': progress_percentage,  # Include progress in context
+        "current_workouts": current_workouts,
+        "current_workout_index": current_workout_index + 1,  # Human-readable index
+        "total_workouts": total_workouts,
+        "end_workout_index": end_index,
+        "completion_percentage": round(completion_percentage, 2),  # Round to two decimal places
+        "progress_workout": current_workout_index < total_workouts,  # If there are unfinished workouts
+        "is_last_workout": end_index >= total_workouts,  # Check if it's the last workout
+        "session_number": session_number,
     }
 
     return render(request, 'workout_session.html', context)
 
-def complete_workout_view(request):
-    # Check if user is authenticated
+def generate_random_workouts(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    # Fetch all incomplete workouts for the user
-    progress_workout = UserProgress.objects.filter(user=request.user, completed=False).first()
+    user_profile = get_object_or_404(UserProfile, user=request.user)
+    fitness_goal = user_profile.Fitness_Goal
+    fitness_type = user_profile.Fitness_Type
+    level = user_profile.Level
 
-    # If there's an incomplete workout, mark it as completed
-    if progress_workout:
-        progress_workout.completed = True
-        progress_workout.progress_date = now()  # Set the completion date to the current time
-        progress_workout.save()
+    # Get the latest session number (week number) for the user
+    latest_progress = UserProgress.objects.filter(user=request.user).order_by('-session_number').first()
+    if latest_progress:
+        current_week_number = latest_progress.session_number + 1  # Increment week number
+    else:
+        current_week_number = 1  # Start with Week 1 if no progress exists
 
-    # Check if all workouts for the current day are completed
-    current_date = now().date()  # Get today's date
-    day_workouts = UserProgress.objects.filter(user=request.user, progress_date=current_date)
+    # Filter workouts based on the user's profile
+    filtered_workouts = Workout.objects.filter(
+        Level=level,
+        Type=fitness_type
+    )
 
-    if day_workouts.count() == day_workouts.filter(completed=True).count():
-        # If all workouts for the day are completed, move to the next day
-        next_day = current_date + timedelta(days=1)
-        next_workout = UserProgress.objects.filter(user=request.user, progress_date=next_day, completed=False).first()
+    # If no workouts match the criteria, fallback to all workouts
+    if not filtered_workouts.exists():
+        filtered_workouts = Workout.objects.all()
 
-        if not next_workout:
-            # All workouts for this day are completed, move to day 2 or recommend new workouts if Day 6 is reached
-            user_profile = UserProfile.objects.get(user=request.user)
-            if current_date.day == 6:  # After Day 6, recommend new workouts
-                recommend_new_workouts(request.user, user_profile)
-                return redirect('recommend_new_workouts')  # Redirect to completion page once all workouts are completed
-            else:
-                # Proceed to the next day's workout session
-                return redirect('workout_session')
-        else:
-            # Move to the next workout of the day
-            return redirect('workout_session')
+    # Randomly select 15 workouts (3 days x 5 workouts)
+    random_workouts = random.sample(list(filtered_workouts), min(15, filtered_workouts.count()))
 
-    # Redirect back to the current workout session if not all are completed
-    return redirect('workout_session')
+    # Split into 3 days
+    workout_plan = {}
+    for day in range(1, 4):  # 3 days
+        workout_plan[day] = random_workouts[(day-1)*5: day*5]
 
-def recommend_new_workouts(user, profile):
-    # Simulate generating workout recommendations based on the user's profile
-    profile_vector = vectorizer.transform([f"{profile.Sex} {profile.Age} {profile.Height} {profile.Weight} {profile.Hypertension} {profile.Diabetes} {profile.BMI} {profile.Level} {profile.Fitness_Goal} {profile.Fitness_Type}"])
+    # Save the new workout plan to UserProgress with the incremented week number
+    for day, workouts in workout_plan.items():
+        for workout in workouts:
+            UserProgress.objects.create(
+                user=request.user,
+                workout=workout,
+                session_number=current_week_number,  # Use the incremented week number
+                progress=0  # Initialize progress to 0
+            )
 
-    # Compute cosine similarity and get top recommendations
-    similarity_scores = cosine_similarity(profile_vector, workout_features_matrix)
-    top_indices = similarity_scores[0].argsort()[-5:][::-1]
-    recommended_workouts = workout_data.iloc[top_indices]
+    # Pass the new workout plan to the template
+    context = {
+        "workout_plan": workout_plan,
+        "current_week_number": current_week_number,
+    }
 
-    # Save new workouts to UserProgress
-    for _, workout in recommended_workouts.iterrows():
-        workout_instance, created = Workout.objects.get_or_create(
-            Title=workout['Title'],
-            defaults={
-                'Desc': workout['Desc'],
-                'Type': workout['Type'],
-                'BodyPart': workout['BodyPart'],
-                'Equipment': workout.get('Equipment', 'None'),
-                'Level': workout.get('Level', 'None')
-            }
-        )
+    return render(request, 'random_workouts.html', context)
 
-        # Even if the workout already exists, ensure it gets added to UserProgress again
-        UserProgress.objects.get_or_create(
-            user=user,
-            workout=workout_instance,
-            defaults={'progress': 0}  # Initialize progress to 0
-        )
+def done_workout_view(request):
+    # Get the completion percentage from the session (set in workout_session_view)
+    completion_percentage = request.session.get('completion_percentage', 0)
+    print(f"Completion percentage from session: {completion_percentage}")
+    
+    # Get the total number of workouts and the current workout index to check if it's the last workout
+    total_workouts = UserProgress.objects.filter(user=request.user).count()
+    current_workout_index = request.session.get('current_workout_index', 0)
+    
+    is_last_workout = current_workout_index >= total_workouts
+    
+    completion_percentage = min(completion_percentage, 100)  # Cap it at 100%
+
+    context = {
+        "completion_percentage": completion_percentage,
+        "is_last_workout": is_last_workout
+    }
+
+    return render(request, 'done_workout.html', context)
+
+def not_done_workout_view(request):
+    # Get the completion percentage from the session (set in workout_session_view)
+    completion_percentage = request.session.get('completion_percentage', 0)
+    print(f"Completion percentage from session: {completion_percentage}")
+    
+    # Get the total number of workouts and the current workout index to check if it's the last workout
+    total_workouts = UserProgress.objects.filter(user=request.user).count()
+    current_workout_index = request.session.get('current_workout_index', 0)
+    
+    is_last_workout = current_workout_index >= total_workouts
+    
+    context = {
+        "completion_percentage": completion_percentage,
+        "is_last_workout": is_last_workout,
+    }
+
+    return render(request, 'not_done_workout.html', context)
 
 def workout_complete_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
 
-    # Fetch all completed workouts
-    completed_workouts = UserProgress.objects.filter(user=request.user, completed=True)
-
-    # Calculate progress
-    total_workouts = UserProgress.objects.filter(user=request.user).count()
-    completed_count = completed_workouts.count()
-    progress_percentage = (completed_count / total_workouts) * 100 if total_workouts > 0 else 0
-
-    context = {
-        'completed_workouts': completed_workouts,
-        'progress_percentage': progress_percentage
-    }
-
-    return render(request, 'workout_complete.html', context)
-
-def progress_tracker_view(request):
-    if not request.user.is_authenticated:
-        return redirect("login")
-
-    # Fetch all user progress records
-    user_progress = UserProgress.objects.filter(user=request.user)
-
-    # Calculate progress
-    total_workouts = user_progress.count()
-    completed_count = user_progress.filter(completed=True).count()
-    progress_percentage = (completed_count / total_workouts) * 100 if total_workouts > 0 else 0
-
-    context = {
-        'user_progress': user_progress,
-        'progress_percentage': progress_percentage,
-        'total_workouts': total_workouts,
-        'completed_count': completed_count
-    }
-
-    return render(request, 'progress_tracker.html', context)
-
-def update_profile_view(request):
-    if not request.user.is_authenticated:
-        return redirect("login")
-    
-    # Fetch the user's profile
-    try:
-        profile = UserProfile.objects.get(user=request.user)
-    except UserProfile.DoesNotExist:
-        return redirect('profile_not_found')  # Handle cases where the profile does not exist
-    
     context = {}
+    
+    return render(request, 'workout_complete.html')
 
-    if request.method == 'POST':
-        # Get the new height and weight from the form submission
-        new_height = request.POST.get('Height', '')
-        new_weight = request.POST.get('Weight', '')
+def workout_progress_view(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
 
-        # Store the old height and weight before updating
-        old_height = profile.Height
-        old_weight = profile.Weight
+    # Get the user's workout progress and profile
+    workout_progress = UserProgress.objects.filter(user=request.user)
+    # print(workout_progress)  # Debugging: Check if workouts are being fetched
 
-        # Update the profile with new height and weight if provided
-        if new_height:
-            profile.Height = new_height
-        if new_weight:
-            profile.Weight = new_weight
+    user_profile = get_object_or_404(UserProfile, user=request.user)
+    
+    total_workouts = workout_progress.count()
 
-        # Save the updated profile
-        profile.save()
+    # Store workout completion percentage per workout   
+    workout_percentages = []
+    total_reps_completed = 0
+    total_reps_expected = 0
+    
+    # Group progress by session_number
+    session_data = {i: [] for i in range(1, 7)}  # For 6 days
 
-        # Compare old vs. new values
-        height_changed = old_height != profile.Height
-        weight_changed = old_weight != profile.Weight
+    for workout in workout_progress:
+        # Calculate reps completed for each workout
+        reps_completed = workout.progress
+        reps_expected = workout.preferred_reps # Assuming this gives the expected reps per workout
+        total_reps_completed += reps_completed
+        total_reps_expected += reps_expected
 
-        # Pass comparison results to the template
-        context.update({
-            'old_height': old_height,
-            'old_weight': old_weight,
-            'new_height': profile.Height,
-            'new_weight': profile.Weight,
-            'height_changed': height_changed,
-            'weight_changed': weight_changed,
+        # Calculate completion percentage for each workout
+        completion_percentage = (reps_completed / reps_expected) * 100 if reps_expected else 0
+        completion_percentage = min(completion_percentage, 100)  # Ensure it doesn't exceed 100
+        workout_percentages.append({
+            "workout": workout,
+            "completion_percentage": round(completion_percentage, 2),
+            "date": workout.date,  # Include the date in the workout data
+            "session_number": workout.session_number,  # Capture the session number
         })
+
+    # Calculate overall progress for the entire plan
+    if total_reps_expected > 0:
+        overall_progress = (total_reps_completed / total_reps_expected) * 100
+        overall_progress = min(overall_progress, 100)  # Ensure it doesn't exceed 100
 
     else:
-        # If it's a GET request, just display the form with current values
-        context.update({
-            'old_height': profile.Height,
-            'old_weight': profile.Weight,
-            'new_height': profile.Height,
-            'new_weight': profile.Weight,
+        overall_progress = 0
+        
+    # Split workouts into groups of 5 (workout plans)
+    # workout_plans = [workout_percentages[i:i + 5] for i in range(0, len(workout_percentages), 5)]
+    
+    # Split workouts into groups of 5 (workout plans) and calculate average progress for each plan
+    workout_plans = []
+    for i in range(0, len(workout_percentages), 5):
+        plan = workout_percentages[i:i + 5]
+        plan_total = sum(workout['completion_percentage'] for workout in plan)
+        average_completion = plan_total / len(plan) if len(plan) > 0 else 0
+        workout_plans.append({
+            "workouts": plan,
+            "average_completion": round(average_completion, 2)
+        })
+        
+    context = {
+        "workout_percentages": workout_percentages,
+        "overall_progress": round(overall_progress, 2),  # Round the overall progress
+        "total_workouts": total_workouts,
+        "workout_plans": workout_plans,  # Send the grouped workout plans to the template
+    }   
+
+    return render(request, 'workout_progress.html', context)
+
+def dashboard_view(request):
+    if not request.user.is_authenticated:
+        return redirect("login")
+
+    # Get the user's profile and progress
+    user_profile = get_object_or_404(UserProfile, user=request.user)
+    
+    workout_progress = UserProgress.objects.filter(user=request.user)
+    total_workouts = workout_progress.count()
+
+    # Store workout completion percentage per workout
+    workout_percentages = []
+    total_reps_completed = 0
+    total_reps_expected = 0
+    
+    # Group progress by session_number
+    session_data = {i: [] for i in range(1, 7)}  # For 6 days
+
+    for workout in workout_progress:
+        # Calculate reps completed for each workout
+        reps_completed = workout.progress
+        reps_expected = workout.preferred_reps # Assuming this gives the expected reps per workout
+        total_reps_completed += reps_completed
+        total_reps_expected += reps_expected
+
+        # Calculate completion percentage for each workout
+        completion_percentage = (reps_completed / reps_expected) * 100 if reps_expected else 0
+        completion_percentage = min(completion_percentage, 100)  # Ensure it doesn't exceed 100
+        workout_percentages.append({
+            "workout": workout,
+            "completion_percentage": round(completion_percentage, 2),
+            "date": workout.date,  # Include the date in the workout data
+            "session_number": workout.session_number  # Capture the session number
         })
 
-    return render(request, 'update_profile.html', context)
+    # Calculate overall progress for the entire plan
+    if total_reps_expected > 0:
+        overall_progress = (total_reps_completed / total_reps_expected) * 100
+        overall_progress = min(overall_progress, 100)  # Ensure it doesn't exceed 100
+    else:
+        overall_progress = 0
+
+    # Split workouts into groups of 5 (workout plans) and calculate average progress for each plan
+    workout_plans = []
+    for i in range(0, len(workout_percentages), 5):
+        plan = workout_percentages[i:i + 5]
+        plan_total = sum(workout['completion_percentage'] for workout in plan)
+        average_completion = plan_total / len(plan) if len(plan) > 0 else 0
+        workout_plans.append({
+            "workouts": plan,
+            "average_completion": round(average_completion, 2)
+        })
+
+    context = {
+        "user_profile": user_profile,
+        "total_workouts": total_workouts,
+        "overall_progress": round(overall_progress, 2),  # Round the overall progress
+        "workout_plans": workout_plans,  # Send the grouped workout plans to the template
+    }
+
+    return render(request, 'dashboard.html', context)

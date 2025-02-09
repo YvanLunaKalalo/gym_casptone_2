@@ -3,43 +3,36 @@
 {% load static %}
 
 {% block title %}
-<title>Flex Appeal || Workout Session</title>
+<title>Flex Appeal || Workout Completed</title>
 {% endblock %}
 
 {% block content %}
-<div class="container my-5 d-flex justify-content-center align-items-center" style="min-height: 100vh;">
+<style type="text/css">
+    /* Custom submit button styling */
+    .btn-custom {
+      background-color: #ed563b;
+      border: none;
+      padding: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: background-color 0.3s ease;
+      color: white;
+    }
+  
+    .btn-custom:hover {
+      background-color: white;
+      color: #ed563b;
+      border: 1px solid #ed563b;
+    }
+</style>
 
-    <!-- Main Card Section -->
-    <div class="card shadow-sm mb-4" style="width: 100%; max-width: 800px;">
-        <div class="card-body">
-            <!-- Progress Bar Section -->
-            <h4 class="card-title text-center text-uppercase">Your Progress</h4>
-            <div class="progress mb-3" style="height: 30px;">
-                <div class="progress-bar bg-success" role="progressbar" 
-                    style="width: {{ progress_percentage }}%;" 
-                    aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
-                    {{ progress_percentage }}%
-                </div>
-            </div>
-            <div class="text-center">
-                <p class="text-muted">Keep up the great work!</p>
-            </div>
+<div class="d-flex justify-content-center pt-5" style="min-height: 100vh;">
+    <div class="container text-center mt-5">
+        <h2>Congratulations!</h2>
+        <p>You have completed your 1 Week Workout plan.</p>
 
-            <!-- Workout Completion Button -->
-            <div class="d-flex justify-content-between mt-4">
-                <a href="{% url 'progress_tracker' %}">
-                    <button type="button" class="btn btn-success btn-lg px-4">
-                        <i class="bi bi-check-circle-fill"></i> Go to Progress Tracker
-                    </button>
-                </a>
-                <a href="{% url 'update_profile' %}">
-                    <button type="button" class="btn btn-success btn-lg px-4">
-                        <i class="bi bi-check-circle-fill"></i> Check your BMI
-                    </button>
-                </a>
-            </div>
-        </div>
+        <a href="{% url 'workout_session' %}" class="btn btn-primary">Start New Routine</a>
+        <a href="{% url 'workout_progress' %}" class="btn btn-custom btn-sm mt-4">View Workout Progress</a>
     </div>
-
 </div>
 {% endblock %}

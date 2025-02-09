@@ -1,0 +1,138 @@
+{% extends 'master.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Workout Progress</title>
+{% endblock %}
+
+{% block content %}
+
+<style type="text/css">
+    /* Custom submit button styling */
+    .btn-custom {
+        background-color: #ed563b;
+        border: none;
+        padding: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: background-color 0.3s ease;
+        color: white;
+    }
+
+    .btn-custom:hover {
+        background-color: white;
+        color: #ed563b;
+        border: 1px solid #ed563b;
+    }
+
+    /* Custom styling for cards in a single row */
+    .landscape-card {
+        display: flex;
+        flex-direction: column; /* Stack cards vertically */
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    /* Ensure that cards take up the full width */
+    .landscape-card .card {
+        width: 100%; /* Make each card take full width */
+        margin: 10px 0; /* Add vertical margin for spacing */
+    }
+
+    /* Custom styling for card length */
+    .card-lengthwise {
+        height: auto; /* Adjust the height of the card to fit content */
+    }
+</style>
+
+<div class="container-fluid pt-5">
+    <h1 class="my-4">Workout Progress</h1>
+
+    <!-- Display the overall progress -->
+    <div class="card mb-4 row">
+        <div class="card-body">
+            <h5 class="card-title">Overall Progress (Daily Routine 1 - Daily Routine 6)</h5>
+            <p class="card-text">Your overall workout progress is: {{ overall_progress }}%</p>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: {{ overall_progress }}%" aria-valuenow="{{ overall_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create a landscape layout for the workout plans -->
+    <div class="landscape-card">
+        {% for plan in workout_plans %}
+        <div class="card h-100">
+            <div class="card-body">
+                <!-- Show workout plan number -->
+                <h5 class="card-title text-center">Daily Routine {{ forloop.counter }}</h5>
+
+                <!-- Responsive table inside the card -->
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover table-sm">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>Workout</th>
+                                <th>Preferred Reps</th>
+                                <th>Reps</th>
+                                <th>Percentage</th>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <!-- <th>Day 1</th>
+                                <th>Day 2</th>
+                                <th>Day 3</th>
+                                <th>Day 4</th>
+                                <th>Day 5</th>
+                                <th>Day 6</th> -->
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for workout in plan.workouts %}
+                            <tr>
+                                <td><strong>{{ workout.workout.workout.Title }}</strong></td>
+                                <td>{{ workout.workout.preferred_reps }} Preferred Reps</td> <!-- Show preferred reps here -->
+                                <td>{{ workout.workout.progress }} reps completed</td>
+                                <td>{{ workout.completion_percentage }}%</td>
+                                <td>{{ workout.date }}</td>
+                                <td>{{ workout.date|date:"D" }}</td> <!-- Add day of the week here -->
+                                <!-- Add columns for Day 1 to Day 6 -->
+                                <!-- <td>{{ workout.day_1_progress }}%</td>
+                                <td>{{ workout.day_2_progress }}%</td>
+                                <td>{{ workout.day_3_progress }}%</td>
+                                <td>{{ workout.day_4_progress }}%</td>
+                                <td>{{ workout.day_5_progress }}%</td>
+                                <td>{{ workout.day_6_progress }}%</td> -->
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Display the total completion percentage for the plan -->
+                <p class="card-text text-center mt-3">Average completion for this Daily Routine: {{ plan.average_completion }}%</p>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ plan.average_completion }}%" aria-valuenow="{{ plan.average_completion }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if request.session.has_unfinished_workout %}
+    <div class="text-center mt-3">
+        <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Continue Your Workout</a>
+    </div>
+    {% endif %}
+    <!-- Add a button to go to the Dashboard -->
+    <div class="text-center mt-4">
+        <a href="{% url 'dashboard' %}" class="btn btn-custom btn-sm">Go to Dashboard</a>
+    </div>
+    <!-- Add a button below the workout progress cards -->
+    <!-- <div class="text-center mt-4">
+        <a href="{% url 'index' %}" class="btn btn-custom btn-sm">Go to Homepage</a>
+    </div> -->
+</div>
+
+{% endblock %}
+

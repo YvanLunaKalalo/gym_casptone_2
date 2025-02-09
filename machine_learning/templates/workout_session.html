@@ -7,57 +7,91 @@
 {% endblock %}
 
 {% block content %}
-<div class="container my-5 d-flex justify-content-center align-items-center" style="min-height: 90vh;">
+<style type="text/css">
+    /* Custom submit button styling */
+    .btn-custom {
+        background-color: #ed563b;
+        border: none;
+        padding: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: background-color 0.3s ease;
+        color: white;
+    }
 
-    <div class="w-100" style="max-width: 800px;">
-        <!-- Progress Bar Section -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <h4 class="card-title text-center">Your Progress</h4>
-                <div class="progress mb-3" style="height: 30px;">
-                    <div class="progress-bar bg-success" role="progressbar" 
-                        style="width: {{ progress_percentage }}%;" 
-                        aria-valuenow="{{ progress_percentage }}" aria-valuemin="0" aria-valuemax="100">
-                        {{ progress_percentage }}%
-                    </div>
-                </div>
-            </div>
-        </div>
+    .btn-custom:hover {
+        background-color: white;
+        color: #ed563b;
+        border: 1px solid #ed563b;
+    }
+</style>
 
-        <!-- Workout Details Section -->
-        <div class="card shadow-lg">
-            <div class="card-body">
-                <h2 class="card-title text-center text-primary">{{ workout.Title }}</h2>
-                <hr>
-                <p class="card-text"><strong>Description:</strong> {{ workout.Desc }}</p>
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Type:</strong> {{ workout.Type }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Body Part:</strong> {{ workout.BodyPart }}</p>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <p><strong>Equipment:</strong> {{ workout.Equipment }}</p>
-                    </div>
-                    <div class="col-md-6">
-                        <p><strong>Level:</strong> {{ workout.Level }}</p>
-                    </div>
-                </div>
-                <!-- Workout Completion Button -->
-                <form method="post" action="{% url 'complete_workout' %}">
-                    {% csrf_token %}
-                    <div class="text-center mt-4">
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-circle-fill"></i> Complete Workout
+<div class="d-flex justify-content-center pt-5 mt-5">
+    <div class="container">
+
+        <!-- Display the session number dynamically -->
+        <h2 class="text-center">Routine - Session {{ session_number }}</h2>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="accordion" id="workoutPlanAccordion">
+                {% for workout in current_workouts %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ workout.id }}">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse"
+                            data-bs-target="#collapse{{ workout.id }}" aria-expanded="true"
+                            aria-controls="collapse{{ workout.id }}">
+                            {{ workout.workout.Title }}
                         </button>
+                    </h2>
+                    <div id="collapse{{ workout.id }}" class="accordion-collapse collapse show"
+                        aria-labelledby="heading{{ workout.id }}" data-bs-parent="#workoutPlanAccordion">
+                        <div class="accordion-body">
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    <h4>{{ workout.workout.Title }}</h4>
+                                    <p>{{ workout.workout.Desc }}</p>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Body Part:</strong> {{ workout.workout.BodyPart }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Equipment:</strong> {{ workout.workout.Equipment }}
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <!-- <div class="col-md-6">
+                                    <strong>Level:</strong> {{ workout.workout.Level }}
+                                </div> -->
+                                <div class="col-md-6">
+                                    <label for="workout_{{ workout.id }}_preferred_reps"><strong>Preferred Reps:</strong></label>
+                                    <input type="number" name="workout_{{ workout.id }}_preferred_reps" class="form-control"
+                                        value="{{ workout.preferred_reps }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="workout_{{ workout.id }}_reps"><strong>Reps:</strong></label>
+                                    <input type="number" name="workout_{{ workout.id }}_reps" class="form-control"
+                                        placeholder="Enter reps" value="{{ workout.progress }}">
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </form>
+                </div>
+                {% endfor %}
             </div>
-        </div>
-    </div>
 
+            <div class="mt-4 text-center">
+                <button type="submit" class="btn btn-custom btn-sm">
+                    {% if is_last_workout %}
+                    Submit Reps
+                    {% else %}
+                    Submit Reps
+                    {% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
 </div>
 {% endblock %}

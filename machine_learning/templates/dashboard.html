@@ -1,0 +1,160 @@
+{% extends 'master.html' %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal - Dashboard</title>
+{% endblock %}
+
+{% block content %}
+
+<style type="text/css">
+    /* Custom submit button styling */
+    .btn-custom {
+        background-color: #ed563b;
+        border: none;
+        padding: 15px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: background-color 0.3s ease;
+        color: white;
+    }
+
+    .btn-custom:hover {
+        background-color: white;
+        color: #ed563b;
+        border: 1px solid #ed563b;
+    }
+</style>
+
+<div class="container-fluid pt-5">
+    <!-- Page Header -->
+    <div class="row mb-4 pt-4">
+        <div class="col">
+            <h1 class="display-4">Welcome back, {{ request.user.username }}!</h1>
+            <p class="lead">Here’s an overview of your profile, progress, and fitness plan.</p>
+        </div>
+    </div>
+
+    <!-- User Profile Section -->
+    <div class="row mb-4">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card shadow-lg border-light rounded">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">User Profile</h5>
+                </div>
+                <div class="card-body">
+                    <dl class="row">
+                        <dt class="col-sm-4">Name:</dt>
+                        <dd class="col-sm-8">{{ user_profile.user.username }}</dd>
+                        <dt class="col-sm-4">Age:</dt>
+                        <dd class="col-sm-8">{{ user_profile.Age }} years</dd>
+                        <dt class="col-sm-4">Height:</dt>
+                        <dd class="col-sm-8">{{ user_profile.Height }} cm</dd>
+                        <dt class="col-sm-4">Weight:</dt>
+                        <dd class="col-sm-8">{{ user_profile.Weight }} kg</dd>
+                        <dt class="col-sm-4">Fitness Goal:</dt>
+                        <dd class="col-sm-8">{{ user_profile.Fitness_Goal }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workout Progress Section -->
+        <div class="col-xl-8 col-md-6 mb-4">
+            <div class="card shadow-lg border-light rounded">
+                <div class="card-header bg-info text-white">
+                    <h5 class="card-title mb-0">Workout Progress Overview</h5>
+                </div>
+                <div class="card-body">
+                    <p><strong>Total Workouts Completed:</strong> {{ total_workouts }}</p>
+                    <p><strong>Overall Progress:</strong> {{ overall_progress }}%</p>
+                    <div class="progress mb-4" style="height: 20px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ overall_progress }}%"
+                            aria-valuenow="{{ overall_progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <p class="text-muted">You're making great progress! Keep it up!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Workout Plans Section -->
+    <h3 class="my-4">Your Workout Plans</h3>
+    <div class="row">
+        <!-- Excel-Style Table for Daily Routines -->
+        <div class="col-12 mb-4">
+            <div class="card shadow-lg border-light rounded">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="card-title mb-0">Your Workout Plans</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-bordered table-striped">
+                        <thead>
+                            <tr>
+                                <th>Workout Name</th>
+                                <th>Preferred Reps</th>
+                                <th>Progress (Reps)</th>
+                                <th>Completion (%)</th>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for plan in workout_plans %}
+                            <tr>
+                                <td colspan="7" class="text-center font-weight-bold">
+                                    Daily Routine {{ forloop.counter }} - Completion: {{ plan.average_completion }}%
+                                </td>
+                            </tr>
+                            {% for workout in plan.workouts %}
+                            <tr>
+                                <td>{{ workout.workout.workout.Title }}</td>
+                                <td>{{ workout.workout.preferred_reps }} Preferred Reps</td> <!-- Show preferred reps here -->
+                                <td>{{ workout.workout.progress }} reps</td>
+                                <td>{{ workout.completion_percentage|floatformat:2 }}%</td>
+                                <td>{{ workout.date}}</td> <!-- Add day of the week here -->
+                                <td>{{ workout.date|date:"D" }}</td> <!-- Add day of the week here -->
+                                <td class="text-center">
+                                    <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Edit</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if request.user.is_authenticated %}
+    <!-- Navigation Buttons -->
+    {% if request.session.has_unfinished_workout %}
+    <div class="text-center mt-3">
+        <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Continue Your Workout</a>
+    </div>
+    {% endif %}
+
+    <!-- Display the recommendations button only if the workout session is complete -->
+    {% if not request.session.has_unfinished_workout %}
+    <div class="text-center mt-3">
+        <a href="{% url 'workout_progress' %}" class="btn btn-custom btn-sm">View Full Workout Progress</a>
+    </div>
+    {% endif %}
+    {% if not request.session.has_unfinished_workout %}
+    <div class="text-center mt-3">
+        <a href="{% url 'generate_random_workouts' %}" class="btn btn-custom btn-sm">Generate New Workout Plan</a>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="text-center mt-3">
+        <a href="{% url 'recommend' %}" class="btn btn-custom btn-sm">Get Your Recommendations</a>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

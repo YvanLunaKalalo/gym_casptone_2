@@ -1,0 +1,93 @@
+{% extends "master.html" %}
+
+{% load static %}
+
+{% block title %}
+<title>Flex Appeal || Random Workout Recommendations</title>
+{% endblock %}
+
+{% block content %}
+
+<!-- Inline CSS for styling the button -->
+<style type="text/css">
+  /* Custom submit button styling */
+  .btn-custom {
+    background-color: #ed563b;
+    border: none;
+    padding: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.3s ease;
+    color: white;
+  }
+
+  .btn-custom:hover {
+    background-color: white;
+    color: #ed563b;
+    border: 1px solid #ed563b;
+  }
+
+  .main-banner {
+    background-image: url("{% static 'images/banner.jpg' %}");
+    background-size: cover;
+    background-position: center;
+    padding: 100px 0;
+    color: #fff;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+</style>
+
+<!-- Main content area -->
+<div class="main-banner pt-5" id="top">
+  <div class="container pt-5">
+    <!-- Go Back Button -->
+    <!-- <a href="{% url 'index' %}" class="btn btn-custom mb-4">
+      Go Back
+    </a> -->
+  </div>
+</div>
+
+<div class="container py-5">
+  <h1 class="text-center mb-5 font-weight-bold text-uppercase text-dark" style="letter-spacing: 1px;">Your New Workout Plan</h1>
+
+  {% for day, workouts in workout_plan.items %}
+    <div class="mb-5">
+      <h2 class="text-center mb-4 font-weight-bold text-dark" style="letter-spacing: 1px;">Daily Routine {{ day }}</h2>
+      <div class="row">
+        {% for workout in workouts %}
+          <div class="col-sm-12 col-md-6 col-lg-4 mb-4">
+            <!-- Workout Card -->
+            <div class="card shadow-lg border-0 h-100 text-dark">
+              <div class="card-body">
+                <h5 class="card-title font-weight-bold text-dark">{{ workout.Title }}</h5>
+                <p class="card-text text-muted">{{ workout.Desc }}</p>
+
+                <ul class="list-unstyled">
+                  <li><strong>Type:</strong> {{ workout.Type }}</li>
+                  <li><strong>Body Part:</strong> {{ workout.BodyPart }}</li>
+                  <li><strong>Equipment:</strong> {{ workout.Equipment }}</li>
+                  <li><strong>Level:</strong> {{ workout.Level }}</li>
+                  <li><strong>Repetitions: </strong> {{ repetitions }}</li>
+                </ul>
+
+                <!-- Optionally, you could add a "Start" button for each workout -->
+                <!-- <div class="d-flex justify-content-end">
+                  <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Start Workout</a>
+                </div> -->
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+
+  <!-- Start Workout Session Button -->
+  <div class="d-flex justify-content-center">
+    <a href="{% url 'workout_session' %}" class="btn btn-custom btn-lg text-uppercase font-weight-bold" style="letter-spacing: 1px;">
+      Start Workout Session
+    </a>
+  </div>
+</div>
+
+{% endblock %}

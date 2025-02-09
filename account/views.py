@@ -10,38 +10,58 @@ from django.utils.encoding import force_bytes, force_str
 from django.contrib.sites.shortcuts import get_current_site
 from django.contrib.auth.tokens import default_token_generator
 from .models import Account
+from machine_learning.models import UserProfile
+
+# def registration_view(request):
+#     template = loader.get_template('register_&_login/register.html')
+#     context = {}
+#     if request.POST:
+#         form = RegistrationForm(request.POST)
+#         if form.is_valid():
+#             user = form.save(commit=False)
+#             user.is_active = False  # User will not be active until email is confirmed
+#             user.save()
+
+#             # Send confirmation email
+#             current_site = get_current_site(request)
+#             mail_subject = 'Activate your account'
+#             token = default_token_generator.make_token(user)
+#             uid = urlsafe_base64_encode(force_bytes(user.pk))
+#             message = render_to_string('register_&_login/register_email.html', {
+#                 'user': user,
+#                 'domain': current_site.domain,
+#                 'uid': uid,
+#                 'token': token,
+#             })
+#             send_mail(mail_subject, message, 'kalaloyvan07@gmail.com', [user.email])
+
+#             return render(request, 'register_&_login/register_done.html')
+#         else:
+#             context['registration_form'] = form
+#     else:  # GET request
+#         form = RegistrationForm()
+#         context['registration_form'] = form
+
+#     return HttpResponse(template.render(context, request))
 
 def registration_view(request):
-    template = loader.get_template('register_&_login/register.html')
-    context = {}
-    if request.POST:
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            user = form.save(commit=False)
-            user.is_active = False  # User will not be active until email is confirmed
-            user.save()
+	context = {}
+	if request.POST:
+		form = RegistrationForm(request.POST)
+		if form.is_valid():
+			form.save()
+			email = form.cleaned_data.get('email')
+			raw_password = form.cleaned_data.get('password1')
+			account = authenticate(email=email, password=raw_password)
+			login(request, account)
+			return redirect('index')
+		else:
+			context['registration_form'] = form
 
-            # Send confirmation email
-            current_site = get_current_site(request)
-            mail_subject = 'Activate your account'
-            token = default_token_generator.make_token(user)
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            message = render_to_string('register_&_login/register_email.html', {
-                'user': user,
-                'domain': current_site.domain,
-                'uid': uid,
-                'token': token,
-            })
-            send_mail(mail_subject, message, 'kalaloyvan07@gmail.com', [user.email])
-
-            return render(request, 'register_&_login/register_done.html')
-        else:
-            context['registration_form'] = form
-    else:  # GET request
-        form = RegistrationForm()
-        context['registration_form'] = form
-
-    return HttpResponse(template.render(context, request))
+	else:
+		form = RegistrationForm()
+		context['registration_form'] = form
+	return render(request, 'register_&_login/register.html', context)
 
 def terms_and_conditions_view(request):
     template = loader.get_template('terms_and_conditions.html')
@@ -100,7 +120,17 @@ def login_view(request):
                     return HttpResponse(template.render(context, request))
 				
                 login(request, user)
-                return redirect('index')
+                
+                # Check if the user has any existing profile data
+                # Assuming UserProfile is the model for user profile data
+                user_profile_exists = UserProfile.objects.filter(user=user).exists()
+                
+                if user_profile_exists:
+                    # If the user already has a profile, redirect to dashboard
+                    return redirect('dashboard')
+                else:
+                    # If it's the user's first login, redirect to index
+                    return redirect('index')
     else:
         form = AccountAuthenticationForm()
 

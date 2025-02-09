@@ -1,0 +1,46 @@
+{% extends 'master.html' %}
+
+{% block title %}
+<title>Flex Appeal || Not Completed</title>
+{% endblock %}
+
+{% block content %}
+<style type="text/css">
+  /* Custom submit button styling */
+  .btn-custom {
+    background-color: #ed563b;
+    border: none;
+    padding: 15px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: background-color 0.3s ease;
+    color: white;
+  }
+
+  .btn-custom:hover {
+    background-color: white;
+    color: #ed563b;
+    border: 1px solid #ed563b;
+  }
+</style>
+
+<div class="d-flex justify-content-center align-items-center pt-5">
+  <div class="container mt-5">
+    <h2 class="text-center">Workout Progress</h2>
+
+    <!-- Display completion percentage -->
+    <p class="text-center">You've completed {{ completion_percentage }}% of today's workout.</p>
+
+    <!-- Progress bar -->
+    <!-- <div class="progress mb-4">
+            <div class="progress-bar" role="progressbar" style="width: {{ completion_percentage }}%" aria-valuenow="{{ completion_percentage }}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div> -->
+
+    <!-- Center the button -->
+    <div class="text-center">
+      <!-- <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Continue Workout</a> -->
+      <a href="{% url 'dashboard' %}" class="btn btn-custom btn-sm">Dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
