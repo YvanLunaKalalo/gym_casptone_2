@@ -10,4 +10,5 @@ urlpatterns = [
     path('workout-complete/', views.workout_complete_view, name='workout_complete'),
     path('workout-progress/', views.workout_progress_view, name='workout_progress'),
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    
 ]

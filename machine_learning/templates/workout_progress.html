@@ -119,11 +119,11 @@
         {% endfor %}
     </div>
     
-    {% if request.session.has_unfinished_workout %}
+    <!-- {% if request.session.has_unfinished_workout %}
     <div class="text-center mt-3">
         <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Continue Your Workout</a>
     </div>
-    {% endif %}
+    {% endif %} -->
     <!-- Add a button to go to the Dashboard -->
     <div class="text-center mt-4">
         <a href="{% url 'dashboard' %}" class="btn btn-custom btn-sm">Go to Dashboard</a>

@@ -98,14 +98,15 @@
                                 <th>Completion (%)</th>
                                 <th>Date</th>
                                 <th>Day</th>
-                                <th>Action</th>
+                                <!-- <th>Action</th> -->
                             </tr>
                         </thead>
                         <tbody>
                             {% for plan in workout_plans %}
                             <tr>
-                                <td colspan="7" class="text-center font-weight-bold">
+                                <td colspan="6" class="text-center font-weight-bold">
                                     Daily Routine {{ forloop.counter }} - Completion: {{ plan.average_completion }}%
+                                    <a href="{% url 'workout_session' %}?routine={{ forloop.counter }}" class="btn btn-custom btn-sm ml-3">Select this Daily Routine {{ forloop.counter }}</a>
                                 </td>
                             </tr>
                             {% for workout in plan.workouts %}
@@ -116,9 +117,9 @@
                                 <td>{{ workout.completion_percentage|floatformat:2 }}%</td>
                                 <td>{{ workout.date}}</td> <!-- Add day of the week here -->
                                 <td>{{ workout.date|date:"D" }}</td> <!-- Add day of the week here -->
-                                <td class="text-center">
+                                <!-- <td class="text-center">
                                     <a href="{% url 'workout_session' %}" class="btn btn-custom btn-sm">Edit</a>
-                                </td>
+                                </td> -->
                             </tr>
                             {% endfor %}
                             {% endfor %}

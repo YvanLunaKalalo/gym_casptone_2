@@ -45,7 +45,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 
 @admin.register(UserProgress)
 class UserProgressAdmin(admin.ModelAdmin):
-    list_display = ('user', 'workout', 'progress', 'date', 'completion_percentage', 'session_number', 'week_number', 'preferred_reps')
+    list_display = ('user', 'workout', 'progress', 'date', 'completion_percentage', 'session_number', 'routine_number', 'preferred_reps')
     search_fields = ('user__username', 'workout__Title', 'session_number')
     
     change_list_template = "admin/userprogress_change_list.html"  # Custom template for change list

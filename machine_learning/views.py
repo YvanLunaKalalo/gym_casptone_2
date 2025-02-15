@@ -158,6 +158,10 @@ def workout_recommendation_view(request):
 def workout_session_view(request):
     if not request.user.is_authenticated:
         return redirect("login")
+    
+    # Get the selected routine number from the query parameters
+    routine_number = request.GET.get('routine', 1)
+    routine_number = int(routine_number)
 
     # Get the user's workout progress
     workout_progress = UserProgress.objects.filter(user=request.user)
@@ -165,13 +169,13 @@ def workout_session_view(request):
     repetitions_per_workout = get_repetitions(user_profile.Fitness_Goal)
     preferred_reps = UserProgress.preferred_reps
         
-    current_workout_index = request.session.get('current_workout_index', 0) # Get the current workout index from the session or start at 0
+    # current_workout_index = request.session.get('current_workout_index', 0) # Get the current workout index from the session or start at 0
     workouts_per_session = 5
+    start_index = (routine_number - 1) * workouts_per_session
     total_workouts = workout_progress.count() # Organize the workout plan per day
-    
-    session_number = request.session.get('session_number', 1)
+    # session_number = request.session.get('session_number', 1)
 
-    if current_workout_index >= total_workouts:
+    if start_index >= total_workouts:
         # All workouts are completed, save the session progress
         workout_session = UserProgress.objects.create(
             user=request.user,
@@ -179,21 +183,26 @@ def workout_session_view(request):
             completion_percentage=request.session.get('completion_percentage', 100)
         )
         workout_session.save()
+        # workout_session, created = UserProgress.objects.get_or_create(
+        #     user=request.user,
+        #     session_number=request.session.get('session_number', 1),
+        #     defaults={'completion_percentage': 100}
+        # )
         
         # Increment the session number for the next session
-        session_number += 1
-        request.session['session_number'] = session_number
+        routine_number += 1
+        request.session['routine_number'] = routine_number
         
         # Reset the session for a new routine
-        request.session['current_workout_index'] = 0
+        request.session['start_index'] = 0
         request.session['new_session'] = True
 
         # After saving, redirect to a page indicating the routine is restarting
         return render(request, 'generate_random_workouts') # All workouts are completed
 
     # Get the current set of workouts (5 workouts at a time)
-    end_index = min(current_workout_index + workouts_per_session, total_workouts)
-    current_workouts = workout_progress[current_workout_index:end_index]
+    end_index = min(start_index + workouts_per_session, total_workouts)
+    current_workouts = workout_progress[start_index:end_index]
         
     # Initialize total repetitions completed for the current session (LAST CODE)
     if 'new_session' not in request.session or request.session['new_session']:
@@ -204,7 +213,7 @@ def workout_session_view(request):
 
     reps_exceed_limit = False  # Flag for reps exceeding limit
     total_repetitions_expected = repetitions_per_workout * workouts_per_session # Calculate the total repetitions expected for the day
-    session_number = request.session.get('session_number', 1) # Get or set the session number in the request session # Default to 1 if not set
+    # session_number = request.session.get('session_number', 1) # Get or set the session number in the request session # Default to 1 if not set
         
     if request.method == 'POST':
         print("Form data submitted:", request.POST)  # Debugging form data
@@ -232,16 +241,26 @@ def workout_session_view(request):
             if reps_completed > preferred_reps:
                 reps_exceed_limit = True
                 messages.error(request, f"Some Reps exceeded the limit of {preferred_reps} reps.")
-                break  # Stop the loop and do not update any workouts        
+                break  # Stop the loop and do not update any workouts 
             
             # Check if the reps completed are less than the required reps
             if reps_completed <= preferred_reps:
-                #reps_incomplete = True
+                # reps_incomplete = True
             
                 workout.progress = reps_completed  # Update the reps (progress)
                 workout.preferred_reps = preferred_reps  # Update the preferred reps
                 workout.save()
             
+            # Update progress for the current workout (create a new record for each session)
+            # new_workout_progress = UserProgress.objects.create(
+            #     user=request.user,
+            #     workout=workout.workout,
+            #     progress=reps_completed,  # Store reps as progress
+            #     preferred_reps=preferred_reps,
+            #     routine_number=routine_number  # Record the session number
+            # )
+            # new_workout_progress.save()
+
             # If any reps are incomplete, prevent proceeding to the next workout plan
             # if reps_incomplete:
             #     completion_percentage = (total_repetitions_completed / total_repetitions_expected) * 100
@@ -281,7 +300,7 @@ def workout_session_view(request):
         # If any reps are incomplete, prevent proceeding to the next workout plan
         if reps_incomplete:
             completion_percentage = (total_repetitions_completed / total_repetitions_expected) * 100
-            request.session['completion_percentage'] = round    (completion_percentage, 2)
+            request.session['completion_percentage'] = round(completion_percentage, 2)
             
             # messages.error(request, "You need to complete all repetitions before moving to the next workout plan.")
             return redirect('workout_progress')
@@ -308,11 +327,11 @@ def workout_session_view(request):
             
         # Reset session variables for the next workout session
         request.session['total_repetitions_completed'] = 0  # Reset total reps for the next session
-        request.session['current_workout_index'] = end_index  # Move to the next set of workouts
+        request.session['start_index'] = end_index  # Move to the next set of workouts
         
         # Increment the session number for the next set of workouts
-        session_number += 1
-        request.session['session_number'] = session_number
+        routine_number += 1
+        request.session['routine_number'] = routine_number
         request.session['new_session'] = True  # Mark session as new for the next day (LAST CODE)
                 
         # Reset session variables for the next workout session
@@ -325,7 +344,7 @@ def workout_session_view(request):
         return redirect('workout_progress')
     
      # Set 'has_unfinished_workout' to True if there are still workouts to complete
-    request.session['has_unfinished_workout'] = current_workout_index < total_workouts
+    request.session['has_unfinished_workout'] = start_index < total_workouts
     
     # Calculate the percentage of repetitions completed
     if total_repetitions_expected > 0:
@@ -341,13 +360,14 @@ def workout_session_view(request):
 
     context = {
         "current_workouts": current_workouts,
-        "current_workout_index": current_workout_index + 1,  # Human-readable index
+        "start_index": start_index + 1,  # Human-readable index
         "total_workouts": total_workouts,
         "end_workout_index": end_index,
         "completion_percentage": round(completion_percentage, 2),  # Round to two decimal places
-        "progress_workout": current_workout_index < total_workouts,  # If there are unfinished workouts
+        "progress_workout": start_index < total_workouts,  # If there are unfinished workouts
         "is_last_workout": end_index >= total_workouts,  # Check if it's the last workout
-        "session_number": session_number,
+        # "session_number": session_number,
+        "routine_number": routine_number
     }
 
     return render(request, 'workout_session.html', context)
@@ -468,7 +488,7 @@ def workout_progress_view(request):
     total_reps_expected = 0
     
     # Group progress by session_number
-    session_data = {i: [] for i in range(1, 7)}  # For 6 days
+    routine_data = {i: [] for i in range(1, 7)}  # For 6 days
 
     for workout in workout_progress:
         # Calculate reps completed for each workout
@@ -484,7 +504,14 @@ def workout_progress_view(request):
             "workout": workout,
             "completion_percentage": round(completion_percentage, 2),
             "date": workout.date,  # Include the date in the workout data
-            "session_number": workout.session_number,  # Capture the session number
+            "routine_number": workout.routine_number,  # Capture the session number
+        })
+        
+        # Group workouts by routine_number
+        routine_data[workout.routine_number].append({
+            "workout": workout,
+            "completion_percentage": round(completion_percentage, 2),
+            "date": workout.date,
         })
 
     # Calculate overall progress for the entire plan
@@ -514,6 +541,7 @@ def workout_progress_view(request):
         "overall_progress": round(overall_progress, 2),  # Round the overall progress
         "total_workouts": total_workouts,
         "workout_plans": workout_plans,  # Send the grouped workout plans to the template
+        "routine_data": routine_data,  # Send the grouped routine data to the template
     }   
 
     return render(request, 'workout_progress.html', context)
@@ -534,7 +562,7 @@ def dashboard_view(request):
     total_reps_expected = 0
     
     # Group progress by session_number
-    session_data = {i: [] for i in range(1, 7)}  # For 6 days
+    routine_data = {i: [] for i in range(1, 7)}  # For 6 days
 
     for workout in workout_progress:
         # Calculate reps completed for each workout
@@ -550,7 +578,14 @@ def dashboard_view(request):
             "workout": workout,
             "completion_percentage": round(completion_percentage, 2),
             "date": workout.date,  # Include the date in the workout data
-            "session_number": workout.session_number  # Capture the session number
+            "routine_number": workout.routine_number  # Capture the session number
+        })
+        
+        # Group workouts by routine_number
+        routine_data[workout.routine_number].append({
+            "workout": workout,
+            "completion_percentage": round(completion_percentage, 2),
+            "date": workout.date,
         })
 
     # Calculate overall progress for the entire plan
@@ -576,6 +611,7 @@ def dashboard_view(request):
         "total_workouts": total_workouts,
         "overall_progress": round(overall_progress, 2),  # Round the overall progress
         "workout_plans": workout_plans,  # Send the grouped workout plans to the template
+        "routine_data": routine_data,  # Send the grouped routine data to the template
     }
 
     return render(request, 'dashboard.html', context)

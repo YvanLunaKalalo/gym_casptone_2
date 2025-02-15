@@ -45,6 +45,7 @@ class UserProgress(models.Model):
     repetitions = models.IntegerField(default=0)
     completion_percentage = models.FloatField(default=0.0)  # Store completion percentage for the workout
     session_number = models.IntegerField(default=1)  # Store the session number or week number
+    routine_number = models.IntegerField(default=1)  # Add this field
     week_number = models.IntegerField(default=1)  # Add this field
     preferred_reps = models.IntegerField(default=0)  # New field to store preferred repetitions
 

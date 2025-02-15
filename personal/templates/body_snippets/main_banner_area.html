@@ -34,16 +34,7 @@
             <h2 class="mb-4">Unlock Your <em>Personalized Workout Plan</em></h2>
 
             <!-- Display the continue workout button if there is an ongoing session -->
-            {% if request.session.has_unfinished_workout %}
-            <div class="mt-3">
-                <label for="continueWorkoutButton" class="form-label text-white">You have an unfinished workout!</label>
-                <div class="main-button mt-1">
-                    <a id="continueWorkoutButton" href="{% url 'workout_session' %}" class="main-button">Continue Your
-                        Workout
-                    </a>
-                </div>
-            </div>
-            {% endif %}
+            
 
             <!-- Display the recommendations button only if the workout session is complete -->
             {% if not request.session.has_unfinished_workout %}
